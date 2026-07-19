@@ -16,23 +16,45 @@ import os
 MY_EMAIL = os.environ.get("MY_EMAIL")
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 
-today = datetime.now()
-today_tuple = (today.month, today.day)
+birth_file=read_csv(filepath_or_buffer='birthdays.csv')
+#see which is best for data to be dict,list as it is
+birth_dict=birth_file.to_dict(orient='records')
+print(birth_file)
+print(birth_dict)
 
-data = pandas.read_csv("birthdays.csv")
-birthdays_dict = {(data_row["month"], data_row["day"])                  : data_row for (index, data_row) in data.iterrows()}
-if today_tuple in birthdays_dict:
-    birthday_person = birthdays_dict[today_tuple]
-    file_path = f"letter_templates/letter_{random.randint(1, 3)}.txt"
-    with open(file_path) as letter_file:
-        contents = letter_file.read()
-        contents = contents.replace("[NAME]", birthday_person["name"])
+#import the date time
+now=dt.datetime.now()
+year=now.year
+month=now.month
+day=now.day
+print(f"{year}-{month}-{day}")
+#check the date
+is_the_date=False
+birth_person=[]
+for(index,row) in birth_file.iterrows() :
+    if row['month']==month and row['day']==day :
+        is_the_date=True
+        print(type(row))
+        birth_person.append(row)
+print(type(birth_person))
+print(birth_person)
+# name=birth_person['name']
+# print(name)
 
-    with smtplib.SMTP("YOUR EMAIL PROVIDER SMTP SERVER ADDRESS") as connection:
+print(len(birth_person))
+for item in birth_person:
+    # 3. If step 2 is true, pick a random letter from letter templates and replace the [NAME] with the person's actual name from birthdays.csv
+    rand_int = randint(0, 2) + 1
+    # print(rand_int)
+    name=item['name']
+    letter_path = f'letter_templates/letter_{rand_int}.txt'
+    with open(letter_path, 'r') as f:
+        lettercontent = f.read()
+    # print(lettercontent)
+    lettercontent = lettercontent.replace('[NAME]', f'{name}')
+    print(lettercontent)
+    with smtplib.SMTP('smtp.gmail.com', 587) as connection:
         connection.starttls()
-        connection.login(MY_EMAIL, MY_PASSWORD)
-        connection.sendmail(
-            from_addr=MY_EMAIL,
-            to_addrs=birthday_person["email"],
-            msg=f"Subject:Happy Birthday!\n\n{contents}"
-        )
+        connection.login(user=my_email, password=my_email_password)
+        connection.sendmail(from_addr=my_email, msg=f'subject:Happy birth day {name}\n\n {lettercontent}',
+                            to_addrs=item['email'])
